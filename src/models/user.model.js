@@ -29,8 +29,9 @@ const userSchema = new Schema(
       type: String, //url
       required: true,
     },
-    CoverImage: {
+    coverImage: {
       type: String,
+      required: true,
     },
     watchHistory: [
       {
@@ -53,7 +54,7 @@ const userSchema = new Schema(
 
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
-  this.password = bcrypt.hash(this.password, 10);
+  this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
@@ -88,4 +89,4 @@ userSchema.methods.isPasswordCorrect = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
 
-export const Uuser = mongoose.model("User", userSchema);
+export const User = mongoose.model("User", userSchema);
