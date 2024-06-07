@@ -74,6 +74,7 @@ userSchema.methods.generateAcessToken = function () {
 };
 
 userSchema.methods.generateRefreshToken = function () {
+  console.log(process.env.REFRESH_TOKEN_SECRET);
   return jwt.sign(
     {
       _id: this._id,
