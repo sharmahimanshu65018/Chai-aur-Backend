@@ -10,7 +10,7 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
       req.cookies?.accessToken ||
       req.header("Authorization")?.replace("Bearer ", "");
 
-    // console.log(token);
+    console.log("Pandey querry:", token);
 
     if (!token) {
       throw new ApiError(401, "Unauthorized request");
@@ -32,6 +32,8 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
+    console.log(error);
+    console.log(error.message);
     throw new ApiError(401, error?.message || "Invalid token");
   }
 });

@@ -59,6 +59,7 @@ userSchema.pre("save", async function (next) {
 });
 
 userSchema.methods.generateAcessToken = function () {
+  console.log(process.env.ACCESS_TOKEN_SECRET);
   return jwt.sign(
     {
       _id: this._id,
@@ -74,7 +75,7 @@ userSchema.methods.generateAcessToken = function () {
 };
 
 userSchema.methods.generateRefreshToken = function () {
-  console.log(process.env.REFRESH_TOKEN_SECRET);
+  // console.log(process.env.REFRESH_TOKEN_SECRET);
   return jwt.sign(
     {
       _id: this._id,
