@@ -302,7 +302,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
   ).select("-password");
   return res
     .status(200)
-    .json(new ApiRespose(200, user, "Cover Image updated sucessfully"));
+    .json(new ApiRespose(200, user, "Avatar Image updated sucessfully"));
 });
 
 const updateUserCoverImage = asyncHandler(async (req, res) => {
