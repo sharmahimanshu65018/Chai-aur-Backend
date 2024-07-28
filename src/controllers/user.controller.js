@@ -5,6 +5,7 @@ import { uploadOnCloudinry } from "../utils/cloudanry.js";
 import { ApiRespose } from "../utils/ApiResponse.js";
 import { response } from "express";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
@@ -255,7 +256,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 const getCurrentUser = asyncHandler(async (req, res) => {
   return res
     .status(200)
-    .json(200, req.user, "Current user fetched sucessfully");
+    .json(new ApiRespose(200, req.user, "Current user fetched sucessfully"));
 });
 
 const upadteAccountDetails = asyncHandler(async (req, res) => {
@@ -263,7 +264,7 @@ const upadteAccountDetails = asyncHandler(async (req, res) => {
   if (!fullName || !email) {
     throw new ApiError(400, "All feild are required");
   }
-  const user = User.findByIdAndUpdate(
+  const user = await User.findByIdAndUpdate(
     req.user?._id,
     {
       $set: {
@@ -291,6 +292,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Error while uploadind on avatar");
   }
 
+  //TDDO: Deleted old image
   const user = await User.findByIdAndUpdate(
     req.user?._id,
     {
@@ -331,6 +333,114 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     .json(new ApiRespose(200, user, "Cover Image updated sucessfully"));
 });
 
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+  const { username } = req.params;
+  if (!username?.trim()) {
+    throw new ApiError(400, "username is missing");
+  }
+  const channel = User.aggregate([
+    {
+      $match: {
+        username: username?.toLowerCase(),
+      },
+    },
+    {
+      $lookup: {
+        from: "subsciptions",
+        localField: "_id",
+        foreignField: "channel",
+        as: "subscribers",
+      },
+    },
+    {
+      $lookup: {
+        from: "subsciptions",
+        localField: "_id",
+        foreignField: "subscriber",
+        as: "subscibedTo",
+      },
+    },
+    {
+      $addFields: {
+        subscriberCount: {
+          $size: "$subscribers",
+        },
+        channelSubscribeTocount: {
+          $size: "$subscibedTo",
+        },
+        isSubscribed: {
+          $cond: {
+            if: { $in: [req.user?._id, "&subscribers.subscriber"] },
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        fullName: 1,
+        username: 1,
+        subscriberCount: 1,
+        channelSubscribeTocount: 1,
+        isSubscribed: 1,
+        avatar: 1,
+        coverImage: 1,
+        email: 1,
+      },
+    },
+  ]);
+});
+
+const getWatchHistory = asyncHandler(async (req, res) => {
+  const user = await User.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(req.user._id),
+      },
+    },
+    {
+      $lookup: {
+        from: "video",
+        localFeild: "watchHistory",
+        foreignField: "_id",
+        as: "watchHistory",
+        pipline: [
+          {
+            $lookup: {
+              from: "users",
+              localFeild: "owner",
+              foreignField: "_id",
+              as: "owner",
+              pipline: [
+                {
+                  $project: {
+                    fullName: 1,
+                    username: 1,
+                    avatar: 1,
+                  },
+                },
+              ],
+            },
+          },
+          {
+            $addFields: {
+              owner: {
+                $first: "$owner",
+              },
+            },
+          },
+        ],
+      },
+    },
+  ]);
+  return res
+    .status(200)
+    .json(
+      new ApiRespose(200, user[0].WatchHistory, "watchech history fetched")
+    );
+});
+
 export {
   registerUser,
   loginUser,
@@ -341,4 +451,6 @@ export {
   upadteAccountDetails,
   updateUserAvatar,
   updateUserCoverImage,
+  getUserChannelProfile,
+  getWatchHistory,
 };
